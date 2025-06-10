@@ -1,7 +1,10 @@
+import Conversation from '../models/conversation.model';
+import Message from '../models/message.model';
+
 const express = require('express');
 const { io, userToSocketMap } = require('../socket/socket');
 
-export const messageController = (req, res) => {
+export const sendMessageController = async(req, res) => {
         const { message } = req.body;
         const { id } = req.params;
         if (!message) {
@@ -10,19 +13,37 @@ export const messageController = (req, res) => {
         if (!id) {
             return res.status(400).json({ error: 'User ID is required' });
         }
+
+        const messageDb = await Message.create({ message });    
+        await Conversation.findOneAndUpdate(
+            { senderId: req.user._id, receiverId: id },
+            { $push: { messages: messageDb._id } },
+            { new: true, upsert: true }
+        );
         
-        // Emit the message to all connected clients
-        io.to(userToSocketMap[id]).emit('message', message);
+        if (userToSocketMap.has(id)) {
+            io.to(userToSocketMap[id]).emit('message', message);
+        }
         res.status(200).json({ success: true, message: 'Message sent' });
 }
 
-export const getMessagesController = (req, res) => {
-    // This is a placeholder for retrieving messages.
-    // In a real application, you would fetch messages from a database.
-    const messages = [
-        { id: 1, text: 'Hello World' },
-        { id: 2, text: 'Socket.io is awesome!' }
-    ];
+export const getMessagesController = async(req, res) => {
+    if (!req.query.id) {
+        return res.status(400).json({ error: 'User ID is required' });
+    }  
+    // Here, you would typically fetch messages from the database
+    const conversation = await Conversation.findOne({
+        senderId: req.user._id,
+        receiverId: req.query.id
+    }).populate('messages');    
+    if (!conversation) {
+        return res.status(404).json({ error: 'Conversation not found' });
+    }
+    const messages = conversation.messages.map(msg => ({
+        id: msg._id,
+        text: msg.message,
+        createdAt: msg.createdAt
+    }));
 
     res.status(200).json({ success: true, messages });
 }
