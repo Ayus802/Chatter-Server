@@ -1,10 +1,9 @@
-import Conversation from '../models/conversation.model';
-import Message from '../models/message.model';
-
+const Message = require('../models/message.model');
+const Conversation = require('../models/conversation.model');
 const express = require('express');
 const { io, userToSocketMap } = require('../socket/socket');
 
-export const sendMessageController = async(req, res) => {
+const sendMessageController = async(req, res) => {
         const { message } = req.body;
         const { id } = req.params;
         if (!message) {
@@ -27,7 +26,7 @@ export const sendMessageController = async(req, res) => {
         res.status(200).json({ success: true, message: 'Message sent' });
 }
 
-export const getMessagesController = async(req, res) => {
+const getMessagesController = async(req, res) => {
     if (!req.query.id) {
         return res.status(400).json({ error: 'User ID is required' });
     }  
@@ -47,3 +46,8 @@ export const getMessagesController = async(req, res) => {
 
     res.status(200).json({ success: true, messages });
 }
+
+module.exports = {
+    sendMessageController,
+    getMessagesController
+};
