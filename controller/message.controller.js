@@ -1,12 +1,22 @@
 const Message = require('../models/message.model');
 const Conversation = require('../models/conversation.model');
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const { io, userToSocketMap } = require('../socket/socket');
+const { verifyToken } = require('../utils/tokenHandler');
 
 const sendMessageController = async(req, res) => {
         const { message } = req.body;
         const { id } = req.params;
-        const userId = req.headers['user-id']; // Assuming user ID is sent in headers
+        const token = req.headers.authorization?.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+        const verifyToken = verifyToken(token);
+        console.log(verifyToken);
+        if (!verifyToken) {
+            return res.status(401).json({ error: 'Invalid token' });
+        }
         if (!userId) {
             return res.status(400).json({ error: 'User ID is required' });
         }
