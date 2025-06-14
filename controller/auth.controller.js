@@ -1,0 +1,77 @@
+
+const zod = require('zod');
+const User = require('../models/user.modal');
+const bcrypt = require('bcrypt'); 
+const { generateToken } = require('../utils/tokenHandler');
+
+
+const registerSchema = zod.object({
+    name: zod.string().min(1, 'Name is required'),
+    username: zod.string().min(1, 'Username is required'),
+    password: zod.string().min(6, 'Password must be at least 6 characters long'),
+    confirmPassword: zod.string().min(6, 'Confirm Password must be at least 6 characters long'),
+
+}).refine(data => data.password === data.confirmPassword, {
+    message: 'Passwords must match'
+});
+
+const loginSchema = zod.object({
+    username: zod.string().min(1, 'Username is required'),
+    password: zod.string().min(6, 'Password must be at least 6 characters long'),
+}); 
+
+const registrationController = async(req, res) => {
+    const body = req.body;
+    const parsed = registerSchema.safeParse(body);
+    if (!parsed.success) {
+        return res.status(400).json({ success: false, message: parsed.error.errors[0].message });
+    }
+    await User.findOne({ username: parsed.data.username })
+        .then(existingUser => {
+            if (existingUser) {
+                return res.status(400).json({ success: false, message: 'Username already exists' });
+            }
+            const newUser = new User({
+                name: parsed.data.name,
+                username: parsed.data.username,
+                password: parsed.data.password, // Password should be hashed before saving
+            });
+            return newUser.save();
+        })
+        .then(user => {
+            return res.status(201).json({ success: true, message: 'User registered successfully', user });
+        })
+        .catch(err => {
+            console.error(err);
+            return res.status(500).json({ success: false, message: 'Internal server error' });
+        });
+    // Here you would typically save the user to the database
+    
+    return res.status(400).json({ success: false, message: 'Username and password are required' });
+};
+
+const loginController = async(req, res) => {
+    const { username, password } = req.body;
+
+    const parsed = loginSchema.safeParse({ username, password });
+    if(!parsed.success){
+        return res.status(400).json({ success: false, message: parsed.error.errors[0].message });
+    }
+    const user = await User.findOne(({ username: parsed.data.username, password: parsed.data.password }))
+    if (!user) {
+        return res.status(401).json({ success: false, message: 'Invalid username or password' });
+    }
+    const passwordMatch = bcrypt.compare(parsed.data.password, user.password);
+    if (!passwordMatch) {
+        return res.status(401).json({ success: false, message: 'Invalid username or password' });
+    }
+    const token = generateToken(user)
+    return res.status(200).json({ success: true, message: 'Login successful', token });
+    // Here you would typically validate the user credentials
+    
+};
+
+module.exports = {
+    registrationController,
+    loginController
+};

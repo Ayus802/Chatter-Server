@@ -6,6 +6,10 @@ const { io, userToSocketMap } = require('../socket/socket');
 const sendMessageController = async(req, res) => {
         const { message } = req.body;
         const { id } = req.params;
+        const userId = req.headers['user-id']; // Assuming user ID is sent in headers
+        if (!userId) {
+            return res.status(400).json({ error: 'User ID is required' });
+        }
         if (!message) {
             return res.status(400).json({ error: 'Message is required' });
         }
@@ -15,7 +19,7 @@ const sendMessageController = async(req, res) => {
 
         const messageDb = await Message.create({ message });    
         await Conversation.findOneAndUpdate(
-            { senderId: req.user._id, receiverId: id },
+            { senderId: userId, receiverId: id },
             { $push: { messages: messageDb._id } },
             { new: true, upsert: true }
         );
