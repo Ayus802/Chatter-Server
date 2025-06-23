@@ -23,31 +23,27 @@ const loginSchema = zod.object({
 const registrationController = async(req, res) => {
     const body = req.body;
     const parsed = registerSchema.safeParse(body);
+    try{
     if (!parsed.success) {
         return res.status(400).json({ success: false, message: parsed.error.errors[0].message });
     }
-    await User.findOne({ username: parsed.data.username })
-        .then(existingUser => {
-            if (existingUser) {
-                return res.status(400).json({ success: false, message: 'Username already exists' });
-            }
-            const newUser = new User({
-                name: parsed.data.name,
-                username: parsed.data.username,
-                password: parsed.data.password, // Password should be hashed before saving
-            });
-            return newUser.save();
-        })
-        .then(user => {
-            return res.status(201).json({ success: true, message: 'User registered successfully', user });
-        })
-        .catch(err => {
-            console.error(err);
-            return res.status(500).json({ success: false, message: 'Internal server error' });
-        });
+    const existingUser = await User.findOne({ username: parsed.data.username })
+    if (existingUser) {
+        return res.status(400).json({ success: false, message: 'Username already exists' });
+    }
+    const user = await User.create({
+        name: parsed.data.name,
+        username: parsed.data.username,
+        password: parsed.data.password,
+    })
+    const token = generateToken(user);
+    return res.status(201).json({ success: true, message: 'User registered successfully', token });
+
+    }catch(err) {
+            return res.status(500).json({ success: false, message: 'Error registering user', error: err.message });
+        };
     // Here you would typically save the user to the database
     
-    return res.status(400).json({ success: false, message: 'Username and password are required' });
 };
 
 const loginController = async(req, res) => {
@@ -64,7 +60,7 @@ const loginController = async(req, res) => {
     const passwordMatch = bcrypt.compare(parsed.data.password, user.password);
     if (!passwordMatch) {
         return res.status(401).json({ success: false, message: 'Invalid username or password' });
-    }
+    } 
     const token = generateToken(user)
     return res.status(200).json({ success: true, message: 'Login successful', token });
     // Here you would typically validate the user credentials

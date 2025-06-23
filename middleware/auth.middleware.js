@@ -2,6 +2,7 @@ const { verifyToken } = require("../utils/tokenHandler");
 
 
 const authMiddleware = (req,res,next) => {
+    console.log("Auth middleware triggered");
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
         return res.status(401).json({ success: false, message: 'No token provided' });

@@ -8,18 +8,9 @@ const { verifyToken } = require('../utils/tokenHandler');
 const sendMessageController = async(req, res) => {
         const { message } = req.body;
         const { id } = req.params;
-        const token = req.headers.authorization?.split(' ')[1];
-        if (!token) {
-            return res.status(401).json({ error: 'Unauthorized' });
-        }
-        const verifyToken = verifyToken(token);
-        console.log(verifyToken);
-        if (!verifyToken) {
-            return res.status(401).json({ error: 'Invalid token' });
-        }
-        if (!userId) {
-            return res.status(400).json({ error: 'User ID is required' });
-        }
+        const sender = req.info;
+        console.log("Sender info:", sender);
+        
         if (!message) {
             return res.status(400).json({ error: 'Message is required' });
         }
@@ -29,7 +20,7 @@ const sendMessageController = async(req, res) => {
 
         const messageDb = await Message.create({ message });    
         await Conversation.findOneAndUpdate(
-            { senderId: userId, receiverId: id },
+            { senderId: sender.id, receiverId: id },
             { $push: { messages: messageDb._id } },
             { new: true, upsert: true }
         );
@@ -41,13 +32,17 @@ const sendMessageController = async(req, res) => {
 }
 
 const getMessagesController = async(req, res) => {
-    if (!req.query.id) {
+
+    const sender = req.info;
+    const {id : receiverId} = req.params;
+
+    if (!receiverId) {
         return res.status(400).json({ error: 'User ID is required' });
     }  
     // Here, you would typically fetch messages from the database
     const conversation = await Conversation.findOne({
-        senderId: req.user._id,
-        receiverId: req.query.id
+        senderId: sender.id,
+        receiverId
     }).populate('messages');    
     if (!conversation) {
         return res.status(404).json({ error: 'Conversation not found' });
