@@ -11,7 +11,7 @@ const sendMessageController = async(req, res) => {
         const sender = req.info;
         console.log("Sender info:", sender);
         
-        if (!message) {
+        if (!message) { 
             return res.status(400).json({ error: 'Message is required' });
         }
         if (!id) {
@@ -22,11 +22,11 @@ const sendMessageController = async(req, res) => {
         await Conversation.findOneAndUpdate(
             { senderId: sender.id, receiverId: id },
             { $push: { messages: messageDb._id } },
-            { new: true, upsert: true }
+            { new: true, upsert: true } 
         );
-        
+          
         if (userToSocketMap.has(id)) {
-            io.to(userToSocketMap[id]).emit('message', message);
+            io.emit('message', message);
         }
         res.status(200).json({ success: true, message: 'Message sent' });
 }

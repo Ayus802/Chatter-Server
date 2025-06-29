@@ -2,14 +2,17 @@ const { verifyToken } = require("../utils/tokenHandler");
 
 
 const authMiddleware = (req,res,next) => {
-    console.log("Auth middleware triggered");
-    const token = req.headers.authorization?.split(' ')[1];
+    const token = req?.headers?.authorization?.split(' ')[1];
+    console.log("Auth middleware triggered", req.headers);
     if (!token) {
         return res.status(401).json({ success: false, message: 'No token provided' });
     }
 
     try {
         const decoded = verifyToken(token);
+        if (!decoded) {
+            return res.status(401).json({ success: false, message: 'Invalid token', token });
+        }
         req.info = decoded;
         next(); // Proceed to the next middleware or route handler
     } catch (error) {

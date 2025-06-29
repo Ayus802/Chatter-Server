@@ -12,14 +12,17 @@ app.get('/', (req, res) => {
 });
 
 // Socket.io connection
-const userToSocketMap = new Map(); // Map to track user IDs to socket IDs
+var userToSocketMap = new Map(); // Map to track user IDs to socket IDs
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
     const userId = socket.handshake.query.userId; // Assuming user ID is sent in the query string
-    if (userId) {
-        userToSocketMap.set(userId, socket.id); // Map user ID to socket ID
-        console.log(`User ${userId} connected with socket ID ${socket.id}`);
+    if (!userId) {
+        console.error('User ID is required for socket connection');
+        socket.disconnect(); // Disconnect if user ID is not provided
+        return;
     }
+    userToSocketMap.set(userId, socket.id); // Map user ID to socket ID
+    console.log(`User ${userId} connected with socket ID ${socket.id}`);
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
     });
@@ -31,4 +34,4 @@ module.exports = {
     server,
     io,
     userToSocketMap
-};
+}; 
