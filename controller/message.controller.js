@@ -40,20 +40,21 @@ const getMessagesController = async(req, res) => {
         return res.status(400).json({ error: 'User ID is required' });
     }  
     // Here, you would typically fetch messages from the database
-    const conversation = await Conversation.findOne({
+    const messagesSend = await Conversation.findOne({
         senderId: sender.id,
         receiverId
     }).populate('messages');    
-    if (!conversation) {
-        return res.status(404).json({ error: 'Conversation not found' });
-    }
-    const messages = conversation.messages.map(msg => ({
-        id: msg._id,
-        text: msg.message,
-        createdAt: msg.createdAt
-    }));
+    const messagesReceived = await Conversation.findOne({
+        senderId: receiverId,
+        receiverId: sender.id
+    }).populate('messages');
+    // if (!messagesSend && !messagesReceived) {
+    //     return res.status(404).json({ error: 'Conversation not found' });
+    // }
+    console.log("Messages sent:", messagesSend);
+    console.log("Messages received:", messagesReceived);
 
-    res.status(200).json({ success: true, messages });
+    res.status(200).json({ success: true, messagesSend, messagesReceived });
 }
 
 module.exports = {
