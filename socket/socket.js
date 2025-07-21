@@ -21,12 +21,32 @@ io.on('connection', (socket) => {
         socket.disconnect(); // Disconnect if user ID is not provided
         return;
     }
+
+
+    let senderSocket = null;
+    let receiverSocket =null;
+
+    socket.on('message', (msg) => {
+        const message = JSON.parse(msg);
+        if (message.type === 'sender'){
+            senderSocket = socket.id;
+        } else if (message.type === 'receiver'){
+            receiverSocket = socket.id;
+        } else if (message.type === "createOffer"){
+            if (socket.id !== senderSocket) return;
+            socket.to(receiverSocket).emit({type: 'createOffer', sdp : message.sdp});
+        } else if (message.type === "createAnswer") {
+            
+        }
+
+    })
     userToSocketMap.set(userId, socket.id); // Map user ID to socket ID
     console.log(`User ${userId} connected with socket ID ${socket.id}`);
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
     });
 });
+
 
  
 module.exports = {

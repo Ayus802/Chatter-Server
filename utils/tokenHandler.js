@@ -3,17 +3,27 @@ require('dotenv').config()
 
 function generateToken(user){
     
-    const token = jwt.sign(
+    const accessToken = jwt.sign(
         {
             id: user._id,
             username: user.username,
             name: user.name
         },
         process.env.JWT_SECRET,
-        // { expiresIn: '1h' } // Token expires in 1 hour
+        { expiresIn: '1h' } 
     );
 
-    return token;
+    const refreshToken = jwt.sign(
+        {
+            id: user._id,
+            username: user.username,
+            name: user.name
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+    );
+
+    return accessToken;
 }
 
 function verifyToken(token){

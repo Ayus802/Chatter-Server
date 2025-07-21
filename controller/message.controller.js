@@ -4,6 +4,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const { io, userToSocketMap } = require('../socket/socket');
 const { verifyToken } = require('../utils/tokenHandler');
+const message = require('../router/message');
 
 const sendMessageController = async(req, res) => {
         const { message } = req.body;
@@ -26,7 +27,8 @@ const sendMessageController = async(req, res) => {
         );
           
         if (userToSocketMap.has(id)) {
-            io.emit('message', message);
+            console.log(userToSocketMap.get(id), id)
+            io.to(userToSocketMap.get(id)).emit('message', message);
         }
         res.status(200).json({ success: true, message: 'Message sent' });
 }
@@ -42,19 +44,36 @@ const getMessagesController = async(req, res) => {
     // Here, you would typically fetch messages from the database
     const messagesSend = await Conversation.findOne({
         senderId: sender.id,
-        receiverId
+        receiverId 
     }).populate('messages');    
     const messagesReceived = await Conversation.findOne({
         senderId: receiverId,
         receiverId: sender.id
     }).populate('messages');
-    // if (!messagesSend && !messagesReceived) {
-    //     return res.status(404).json({ error: 'Conversation not found' });
-    // }
-    console.log("Messages sent:", messagesSend);
-    console.log("Messages received:", messagesReceived);
+    
+    let allMessages = [];
 
-    res.status(200).json({ success: true, messagesSend, messagesReceived });
+    if (messagesSend) {
+        const sendMessagesWithSender = messagesSend.messages.map(msg => ({
+            ...msg.toObject(),
+            senderId : messagesSend.senderId,
+            receiverId : messagesSend.receiverId
+        }))
+
+        allMessages = [...allMessages, ...sendMessagesWithSender];
+    }
+
+    if (messagesReceived) {
+        const receivedMessagesWithSender = messagesReceived.messages.map(msg => ({
+            ...msg.toObject(),
+            senderId : messagesReceived.senderId,
+            receiverId : messagesReceived.receiverId
+        }))
+        allMessages = [...allMessages, ...receivedMessagesWithSender];
+    }
+
+    allMessages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    res.status(200).json({ success: true, allMessages });
 }
 
 module.exports = {
