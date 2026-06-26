@@ -3,6 +3,7 @@ const zod = require('zod');
 const User = require('../models/user.modal');
 const bcrypt = require('bcrypt'); 
 const { generateToken } = require('../utils/tokenHandler');
+const { SignUpResponsePayload } = require('../const/payloads');
 
 
 const registerSchema = zod.object({
@@ -22,22 +23,24 @@ const loginSchema = zod.object({
 
 const registrationController = async(req, res) => {
     const body = req.body;
+    
     const parsed = registerSchema.safeParse(body);
     try{
     if (!parsed.success) {
-        return res.status(400).json({ success: false, message: parsed.error.errors[0].message });
+        return res.status(400).json({ success: false, message: parsed.error + "Parse"});
     }
     const existingUser = await User.findOne({ username: parsed.data.username })
     if (existingUser) {
         return res.status(400).json({ success: false, message: 'Username already exists' });
     }
     const user = await User.create({
+
         name: parsed.data.name,
         username: parsed.data.username,
         password: parsed.data.password,
     })
     const token = generateToken(user);
-    return res.status(201).json({ success: true, message: 'User registered successfully', token });
+    return res.status(201).json(SignUpResponsePayload(user._id, user.username, user.email, user.profilePicture));
 
     }catch(err) {
             return res.status(500).json({ success: false, message: 'Error registering user', error: err.message });

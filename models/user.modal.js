@@ -26,11 +26,16 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
-});
+    is_online: {
+      type: Boolean,
+      default: false,
+    },
+    last_seen: {
+      type: Date,
+      default: null,
+    },
+  },{timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }}
+);
 
 userSchema.pre('save', function(next) {
     if (this.isModified('password')) {

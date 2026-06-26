@@ -7,23 +7,20 @@ function generateToken(user){
         {
             id: user._id,
             username: user.username,
-            name: user.name
         },
         process.env.JWT_SECRET,
-        { expiresIn: '1h' } 
+        { expiresIn: '36s' } 
     );
 
     const refreshToken = jwt.sign(
         {
-            id: user._id,
-            username: user.username,
-            name: user.name
+            id: user._id
         },
         process.env.JWT_SECRET,
         { expiresIn: '7d' }
     );
 
-    return accessToken;
+    return {accessToken, refreshToken};
 }
 
 function verifyToken(token){
