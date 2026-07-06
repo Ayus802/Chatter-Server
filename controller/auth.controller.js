@@ -2,8 +2,9 @@
 const zod = require('zod');
 const User = require('../models/user.modal');
 const bcrypt = require('bcrypt'); 
-const { generateToken } = require('../utils/tokenHandler');
+const { generateAccessToken, generateRefreshToken } = require('../utils/tokenHandler');
 const { SignUpResponsePayload } = require('../const/payloads');
+const redis = require('../db/redis');
 
 
 const registerSchema = zod.object({
@@ -29,23 +30,35 @@ const registrationController = async(req, res) => {
     if (!parsed.success) {
         return res.status(400).json({ success: false, message: parsed.error + "Parse"});
     }
-    const existingUser = await User.findOne({ username: parsed.data.username })
+    const existingUser = await User.findOne({ username: parsed.data.username.toLowerCase() })
     if (existingUser) {
         return res.status(400).json({ success: false, message: 'Username already exists' });
     }
     const user = await User.create({
 
         name: parsed.data.name,
-        username: parsed.data.username,
+        username: parsed.data.username.toLowerCase(),
         password: parsed.data.password,
     })
-    const token = generateToken(user);
-    return res.status(201).json(SignUpResponsePayload(user._id, user.username, user.email, user.profilePicture));
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+
+    res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // Set to true in production
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    await redis.set(`refreshToken:${user._id}`, refreshToken, {
+        ex: 7 * 24 * 60 * 60 // Set expiration time to 7 days
+    });
+    
+    return res.status(201).json(SignUpResponsePayload(user._id, user.username, user.email, user.profilePicture, accessToken));
 
     }catch(err) {
             return res.status(500).json({ success: false, message: 'Error registering user', error: err.message });
         };
-    // Here you would typically save the user to the database
     
 };
 
@@ -56,7 +69,7 @@ const loginController = async(req, res) => {
     if(!parsed.success){
         return res.status(400).json({ success: false, message: parsed?.error?.errors[0]?.message });
     }
-    const user = await User.findOne(({ username: parsed?.data?.username, password: parsed?.data?.password }))
+    const user = await User.findOne(({ username: parsed?.data?.username?.toLowerCase(), password: parsed?.data?.password }))
     if (!user) {
         return res.status(401).json({ success: false, message: 'Invalid username or password' });
     }
@@ -64,13 +77,43 @@ const loginController = async(req, res) => {
     if (!passwordMatch) {
         return res.status(401).json({ success: false, message: 'Invalid username or password' });
     } 
-    const token = generateToken(user)
-    return res.status(200).json({ success: true, message: 'Login successful', token });
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+
+    res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // Set to true in production
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    await redis.set(`refreshToken:${user._id}`, refreshToken, {
+        ex: 7 * 24 * 60 * 60 // Set expiration time to 7 days
+    });
+    return res.status(200).json({ success: true, message: 'Login successful', accessToken });
     // Here you would typically validate the user credentials
+
     
 };
 
+const refreshTokenController = async(req, res) => {
+    const refreshToken = req?.cookies?.refreshToken;
+    const user = req.info;
+    console.log("Refresh Token:", user);
+    if (!refreshToken) {
+        return res.status(401).json({ success: false, message: 'Refresh token not found' });
+    }
+    const cachedRefreshToken = await redis.get(`refreshToken:${user.id}`);
+    if (!cachedRefreshToken || cachedRefreshToken !== refreshToken) {
+        return res.status(401).json({ success: false, message: 'Invalid refresh token' });
+    }
+    const accessToken = generateAccessToken(cachedRefreshToken);
+    return res.status(200).json({ success: true, message: 'Access token refreshed', accessToken });
+
+}
+
 module.exports = {
     registrationController,
-    loginController
+    loginController,
+    refreshTokenController
 };

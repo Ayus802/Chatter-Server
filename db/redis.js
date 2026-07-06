@@ -1,11 +1,11 @@
-import { Redis } from '@upstash/redis'
+const { Redis } =  require('@upstash/redis')
 const redis = new Redis({
   url: 'https://golden-chimp-84189.upstash.io',
-  token: '********',
+  token: 'gQAAAAAAAUjdAAIgcDEzNTgxYjBmOTNhYWI0NmZiYmY1ODllOTdkODFkNDJkYQ',
 })
 
-await redis.set("foo", "bar");
-let x = await redis.get("foo");
+redis.set("foo", "bar");
+let x = redis.get("foo");
 console.log(x);
 
 module.exports = redis;
