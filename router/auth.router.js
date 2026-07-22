@@ -111,7 +111,7 @@ router.post('/register', registrationController)
  *      500:
  *        description: Internal server error.
  */
-router.get('/refresh-token', authMiddleware,refreshTokenController)
+router.get('/refresh-token', refreshTokenController)
 
 module.exports = {
     authRouter: router

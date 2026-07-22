@@ -43,7 +43,7 @@ router.get("/profile", authMiddleware, getProfileController);
 /**
  * @swagger
  * /users/profile:
- *   patch:
+ *   put:
  *     summary: Update current user's profile
  *     description: Updates the authenticated user's profile.
  *     tags: [Users]
@@ -78,7 +78,7 @@ router.get("/profile", authMiddleware, getProfileController);
  *         description: Internal server error.
  */
 
-router.patch("/profile", authMiddleware, updateProfileController);
+router.put("/profile", authMiddleware, updateProfileController);
 
 /**
  * @swagger

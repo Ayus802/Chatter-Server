@@ -1,20 +1,21 @@
+const { decode } = require("jsonwebtoken");
 const { verifyToken } = require("../utils/tokenHandler");
 
 
 const authMiddleware = (req,res,next) => {
     const token = req?.headers?.authorization?.split(' ')[1];
-    console.log("Auth middleware triggered", req.headers);
     if (!token) {
         return res.status(401).json({ success: false, message: 'No token provided' });
     }
 
     try {
-        const decoded = verifyToken(token);
-        console.log("Decoded token:", decoded, token);
-        if (!decoded) {
+        const isValid = verifyToken(token);
+        const info = decode(token)
+        console.log("Decoded token:", info, token);
+        if (!isValid) {
             return res.status(401).json({ success: false, message: 'Invalid token', token });
         }
-        req.info = decoded;
+        req.info = info;
         next(); // Proceed to the next middleware or route handler
     } catch (error) {
         return res.status(401).json({ success: false, message: 'Invalid token' });

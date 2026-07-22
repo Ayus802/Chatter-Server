@@ -1,9 +1,9 @@
 const express = require('express');
 const { authMiddleware } = require('../middleware/auth.middleware');
-const { sendMessageController } = require('../controller/messages.controller/sendMessage');
-const { getMessageController } = require('../controller/messages.controller/getMessage');
 const { editMessageController } = require('../controller/messages.controller/editMessage');
 const { deleteMessageController } = require('../controller/messages.controller/deleteMessage');
+const { sendMessageController } = require('../controller/messages.controller/sendMessage');
+const { getMessageController } = require('../controller/messages.controller/getMessage');
 
 
 const router = express.Router();
@@ -133,7 +133,7 @@ router.get("/:conversationId", authMiddleware, getMessageController);
 /**
  * @swagger
  * /messages/{messageId}:
- *   patch:
+ *   put:
  *     summary: Edit a message
  *     description: Edit an existing message.
  *     tags: [Messages]
@@ -155,9 +155,14 @@ router.get("/:conversationId", authMiddleware, getMessageController);
  *           schema:
  *             type: object
  *             required:
- *               - content
+ *               - conversationId
+ *               - newContent
+ *              
  *             properties:
- *               content:
+ *              conversationId:
+ *                type: string
+ *                example: 685fd6d99c8e48b8d9f729d1
+ *              newContent:
  *                 type: string
  *                 example: Updated message
  *
@@ -181,7 +186,7 @@ router.get("/:conversationId", authMiddleware, getMessageController);
  *         description: Internal server error.
  */
 
-router.patch("/:messageId", authMiddleware, editMessageController);
+router.put("/:messageId", authMiddleware, editMessageController);
 
 /**
  * @swagger

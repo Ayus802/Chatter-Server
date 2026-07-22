@@ -6,6 +6,11 @@ const conversationSchema = new mongoose.Schema({
         enum: ["private", "group"],
         required: true
     },
+    lastMessage: {
+        type: mongoose.SchemaTypes.ObjectId,
+        ref: "Message",
+        default: null
+    },
     name:{
         type: String,
         trim: true,
@@ -15,11 +20,6 @@ const conversationSchema = new mongoose.Schema({
         ref: "User",
         required: true
     },
-    participant_ids: [{
-        type: mongoose.SchemaTypes.ObjectId,
-        ref: "User",
-        required: true
-    }]
 },
 {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
@@ -40,8 +40,9 @@ const ParticipantSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
-    lastReadAt: {
-        type: Date,
+    lastReadMessage: {
+        type: mongoose.SchemaTypes.ObjectId,
+        ref: "Message",
         default: null,
     },
     role: {

@@ -32,7 +32,7 @@ const createConversationController = async (req, res) => {
             }
             
 
-            if (type === CHAT_TYPES.PRIVATE) {
+            if (type === CHAT_TYPES.PRIVATE && participant_ids.length==1) {
                 const existingConversation = await Conversation.aggregate([
                     {
                         $match:{
@@ -52,7 +52,7 @@ const createConversationController = async (req, res) => {
                             $and: [
 
                                 {"participants.userId": new mongoose.Types.ObjectId(participant_ids[0])},
-                                {'participants.userId': new mongoose.Types.ObjectId(participant_ids[1])},
+                                {'participants.userId': new mongoose.Types.ObjectId(userId)},
                                 {"participants": {$size: 2}}
                             ]
                         }
@@ -70,19 +70,19 @@ const createConversationController = async (req, res) => {
                 const participant1 = new Participant ({
                     conversationId: newConversation._id,
                     userId: userId,
-                    Role: PARTICIPANT_ROLES.ADMIN,
+                    role: PARTICIPANT_ROLES.ADMIN,
                 })
-                const participant = new Participant ({
+                const participant2 = new Participant ({
                     conversationId: newConversation._id,
                     userId: participant_ids[0],
-                    Role: PARTICIPANT_ROLES.MEMBER
+                    role: PARTICIPANT_ROLES.MEMBER
                 })
                 await participant1.save();
-                await participant.save();
+                await participant2.save();
 
                 return res.status(201).json({ success: true, message: "Private conversation created successfully", data: newConversation });
             }
-            else if (type === CHAT_TYPES.GROUP) {
+            else if (type === CHAT_TYPES.GROUP && participant_ids.length>1) {
                 const { name, type, participant_ids } = req.body;
                 
                 const existingConversation = await Conversation.findOne({ name, type: CHAT_TYPES.GROUP});
@@ -101,6 +101,8 @@ const createConversationController = async (req, res) => {
                     userId: participantId,
                     role: PARTICIPANT_ROLES.MEMBER
                 }));
+
+                
                 await Participant.insertMany(participants);
 
                 const adminParticipant = new Participant({

@@ -5,11 +5,12 @@ const bcrypt = require('bcrypt');
 const { generateAccessToken, generateRefreshToken } = require('../utils/tokenHandler');
 const { SignUpResponsePayload } = require('../const/payloads');
 const redis = require('../db/redis');
+const { decode } = require('jsonwebtoken');
 
 
 const registerSchema = zod.object({
     name: zod.string().min(1, 'Name is required'),
-    username: zod.string().min(1, 'Username is required'),
+    username: zod.string().min(1, 'Username is required').toLowerCase(),
     password: zod.string().min(6, 'Password must be at least 6 characters long'),
     confirmPassword: zod.string().min(6, 'Confirm Password must be at least 6 characters long'),
 
@@ -18,7 +19,7 @@ const registerSchema = zod.object({
 });
 
 const loginSchema = zod.object({
-    username: zod.string().min(1, 'Username is required'),
+    username: zod.string().min(1, 'Username is required').toLowerCase(),
     password: zod.string().min(6, 'Password must be at least 6 characters long'),
 }); 
 
@@ -37,9 +38,10 @@ const registrationController = async(req, res) => {
     const user = await User.create({
 
         name: parsed.data.name,
-        username: parsed.data.username.toLowerCase(),
+        username: parsed.data.username,
         password: parsed.data.password,
     })
+    console.log("usser", user)
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
@@ -98,7 +100,9 @@ const loginController = async(req, res) => {
 
 const refreshTokenController = async(req, res) => {
     const refreshToken = req?.cookies?.refreshToken;
-    const user = req.info;
+    const expAccessToken = req?.headers?.authorization?.split(' ')[1]
+    const user = decode(expAccessToken);
+    console.log("Refresh devode", expAccessToken,user)
     console.log("Refresh Token:", user);
     if (!refreshToken) {
         return res.status(401).json({ success: false, message: 'Refresh token not found' });
@@ -107,7 +111,7 @@ const refreshTokenController = async(req, res) => {
     if (!cachedRefreshToken || cachedRefreshToken !== refreshToken) {
         return res.status(401).json({ success: false, message: 'Invalid refresh token' });
     }
-    const accessToken = generateAccessToken(cachedRefreshToken);
+    const accessToken = generateAccessToken(expAccessToken);
     return res.status(200).json({ success: true, message: 'Access token refreshed', accessToken });
 
 }

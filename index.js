@@ -9,10 +9,10 @@ const { conversationRouter } = require('./router/conversation.router');
 require('dotenv').config()
 const { swaggerUi, swaggerSpec } = require("./config/swagger");
 const cookieParser = require('cookie-parser');
+const { app, server } = require('./socket');
 
 
 
-const app = express();
 
 app.use(express.json());
 app.use(cors())
@@ -28,7 +28,7 @@ app.use("/api/v1/users", userRouter);
 app.use("/api/v1/conversations", conversationRouter);
 // Start the server
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     connectDB()
     console.log(`Server listening on http://localhost:${PORT}`);
 });

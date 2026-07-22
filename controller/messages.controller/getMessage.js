@@ -1,27 +1,39 @@
-const { Conversation } = require("../../models/conversation.model");
+const { Conversation, Participant } = require("../../models/conversation.model");
 const { Message } = require("../../models/message.model");
 
 
-
 const getMessageController = async(req, res) => {
-    try {    
+    try {
+        const { conversationId } = req.params;
+        const { cursor, limit } = req.query;
         const sender = req.info;
-        const { conversationId, content, type } = req.body;
 
-        if (!conversationId || !content || !type) {
-            return res.status(400).json({ error: 'conversationId, content, and type are required' });
+        if (!conversationId) {
+            return res.status(400).json({ error: 'conversationId is required' });
         }
         const existingConversation = await Conversation.findById(conversationId);
         if (!existingConversation) {
             return res.status(404).json({ error: 'Conversation not found' });
         }
 
-        const message = await Message.create({ conversationId, senderId: sender.user_id, content, type });
-        res.status(200).json({ success: true, message: 'Message sent', data: message });
+        const isParticipant = await Participant.findOne({conversationId, userId: sender.id});
+        if(!isParticipant){
+            return res.status(404).json({ error: 'User is not part of this conversation'  });
+        };
+        const messages = await Message.find({
+            conversationId
+        })
+        .sort({ createdAt: -1 })
+        .skip(cursor ? parseInt(cursor) : 0)
+        .limit(limit ? parseInt(limit) : 20);
+
+
+        res.status(200).json({ success: true, message: 'Messages fetched successfully', data: messages });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
     }
+
 }
 
 module.exports = {
