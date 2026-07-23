@@ -27,6 +27,12 @@ const getMessageController = async(req, res) => {
         .skip(cursor ? parseInt(cursor) : 0)
         .limit(limit ? parseInt(limit) : 20);
 
+        if (existingConversation.lastMessage 
+            && (!isParticipant.lastReadMessage || isParticipant.lastReadMessage.toString() !== existingConversation.lastMessage.toString())) {
+            
+                await Participant.findByIdAndUpdate(isParticipant._id, { lastReadMessage: existingConversation.lastMessage  }, { new: true  });
+        };
+        console.log("message aa rha ahi",messages)
 
         res.status(200).json({ success: true, message: 'Messages fetched successfully', data: messages });
     } catch (error) {

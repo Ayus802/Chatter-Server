@@ -126,18 +126,26 @@ const createConversationController = async (req, res) => {
 
  const getConversationsController = async(req,res) => {
         try{
-            const page = parseInt(req.query.page) || 1;
-            const limit = parseInt(req.query.limit) || 10;
+            const page = Math.max(1,parseInt(req.query.page) || 1);
+            const limit = Math.min(50, Math.max(1,parseInt(req.query.limit) || 10));
             const skip = (page -1 )* limit;
             const user_id = req.info.id;
-            const participant = await Participant.find({ userId: user_id })
-                .sort({ updated_at: -1 })
+            const participants = await Participant.find({ userId: user_id })
+                .sort({ updatedAt: -1 })
                 .skip(skip)
                 .limit(limit)
                 .populate('conversationId');
-            return res.status(200).json({ success: true, message: "Conversations fetched successfully", data: participant });
+            const conversations = participants.map((participant) => ({
+                ...participant.conversationId.toObject(),
+                role: participant.role,
+                joinedAt: participant.joinedAt,
+                lastReadMessage: participant.lastReadMessage,
+            }));
+            console.log('conversation check', conversations)
+            return res.status(200).json({ success: true, message: "Conversations fetched successfully", data: conversations });
 
         }catch(error){
+            console.error("error aa gya", error)
             return res.status(500).json({ success: false, message: "Internal server error" });
         }
  }

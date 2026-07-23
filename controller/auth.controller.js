@@ -66,7 +66,7 @@ const registrationController = async(req, res) => {
 
 const loginController = async(req, res) => {
     const { username, password } = req.body;
-
+    console.log("Login Request:", username, password);
     const parsed = loginSchema.safeParse({ username, password });
     if(!parsed.success){
         return res.status(400).json({ success: false, message: parsed?.error?.errors[0]?.message });
@@ -99,20 +99,26 @@ const loginController = async(req, res) => {
 };
 
 const refreshTokenController = async(req, res) => {
-    const refreshToken = req?.cookies?.refreshToken;
-    const expAccessToken = req?.headers?.authorization?.split(' ')[1]
-    const user = decode(expAccessToken);
-    console.log("Refresh devode", expAccessToken,user)
-    console.log("Refresh Token:", user);
-    if (!refreshToken) {
-        return res.status(401).json({ success: false, message: 'Refresh token not found' });
+    try {
+        const refreshToken = req?.cookies?.refreshToken;
+
+        const expAccessToken = req?.headers?.authorization?.split(' ')[1]
+        const user = decode(expAccessToken);
+        console.log("Refresh devode", expAccessToken,user)
+        console.log("Refresh Token:", user);
+        if (!refreshToken) {
+            return res.status(401).json({ success: false, message: 'Refresh token not found' });
+        }
+        const cachedRefreshToken = await redis.get(`refreshToken:${user.id}`);
+        if (!cachedRefreshToken || cachedRefreshToken !== refreshToken) {
+            return res.status(401).json({ success: false, message: 'Invalid refresh token' });
+        }
+        const accessToken = generateAccessToken(expAccessToken);
+        return res.status(200).json({ success: true, message: 'Access token refreshed', accessToken });
+    }catch (error) {
+        console.error('Error refreshing access token:', error);
+        return res.status(500).json({ success: false, message: 'Error refreshing access token', error: error.message });
     }
-    const cachedRefreshToken = await redis.get(`refreshToken:${user.id}`);
-    if (!cachedRefreshToken || cachedRefreshToken !== refreshToken) {
-        return res.status(401).json({ success: false, message: 'Invalid refresh token' });
-    }
-    const accessToken = generateAccessToken(expAccessToken);
-    return res.status(200).json({ success: true, message: 'Access token refreshed', accessToken });
 
 }
 

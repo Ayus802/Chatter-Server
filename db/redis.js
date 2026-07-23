@@ -1,7 +1,9 @@
 const { Redis } =  require('@upstash/redis')
+require('dotenv').config();
+
 const redis = new Redis({
-  url: 'https://golden-chimp-84189.upstash.io',
-  token: 'gQAAAAAAAUjdAAIgcDEzNTgxYjBmOTNhYWI0NmZiYmY1ODllOTdkODFkNDJkYQ',
+  url: process.env.REDIS_CONNECTION_URL,
+  token: process.env.REDIS_TOKEN,
 })
 
 redis.set("foo", "bar");
