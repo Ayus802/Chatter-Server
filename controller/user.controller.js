@@ -31,7 +31,6 @@ const getProfileByUsernameController = async (req, res) => {
     try {
         const username = req.params.username;
         const user = await User.findOne({ username });
-        console.log("Fetched user by username:", user);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }

@@ -23,7 +23,7 @@ const deleteMessageController = async (req, res) => {
         const isValidConversationId = await Conversation.findById(conversationId);
         if (!isValidConversationId){
             return res.status(400).json({ error: 'ConversationId is not valid'  })
-        }
+        };
 
         const isParticipant = await Participant.findOne({userId: sender.id, conversationId});
         if (!isParticipant){

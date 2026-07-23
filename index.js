@@ -19,7 +19,6 @@ app.use(cors({
     origin: "*", // update with frontend origin for production
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    // credentials: true
 }))
 app.use(cookieParser())
 app.use(

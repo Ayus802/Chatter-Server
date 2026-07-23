@@ -14,7 +14,7 @@ const options = {
 
         servers: [
             {
-                url: "http://localhost:8080/api/v1",
+                url: process.env.API_BASE_URL || "http://localhost:8080/api/v1",
                 description: "Development Server"
             }
         ],

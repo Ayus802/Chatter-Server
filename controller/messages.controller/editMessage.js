@@ -26,6 +26,9 @@ const editMessageController = async (req, res) => {
         if (!message) {
             return res.status(404).json({ error: 'Message not found' });
         }
+        if (message.isDeleted){
+            return res.status(404).json({ error: "message is already deleted"  });
+        }
         if (message.senderId != sender.id){
             return res.status(400).json({  error: "user is not author or this message" });
         };

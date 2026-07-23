@@ -30,7 +30,7 @@ async function tryConnect(uri, attempts = 3, delayMs = 2000) {
         }
     }
     throw new Error(`Failed to connect to MongoDB at ${uri} after ${attempts} attempts`);
-}
+};
 
 async function connectDB() {
     const tried = new Set();
@@ -53,6 +53,6 @@ async function connectDB() {
     console.error("- If you run this app inside Docker: start a MongoDB container and use a docker network (e.g. set MONGO_URI=mongodb://mongo:27017/<db>),");
     console.error("  or set MONGO_URI to 'mongodb://host.docker.internal:27017/<db>' to connect from Docker to a MongoDB running on the host (Windows/Mac).");
     process.exit(1);
-}
+};
 
 module.exports = connectDB;
